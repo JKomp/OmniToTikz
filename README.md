@@ -26,3 +26,11 @@ Instructions for installation can be found on Omni's [website](https://omni-auto
 * shape line weight, stroke color, fill color
 * Text - the basic code is there but I use a lot of unicode characters and they generate tikz errors.
 * Saving to a file
+
+## Notes
+I use Zed as my editor for this work. If you want to play with the code in Zed you'll want to add the following to your ```settings.json``` file to get javascript code coloring:
+```
+  "file_types": {
+  "JavaScript": ["omnigrafflejs"],
+  }
+```
