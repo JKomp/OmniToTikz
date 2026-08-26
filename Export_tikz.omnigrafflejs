@@ -1,0 +1,259 @@
+// COPY & PASTE into editor app. EDIT & SAVE with “.omnigrafflejs” file extension.
+/*{
+	"type": "action",
+	"targets": ["omnigraffle"],
+	"author": "John Komp",
+	"identifier": "com.sbindustries.gentikz",
+	"version": "1.0",
+	"description": "Convert and export current selection as a tikz graphic",
+	"label": "Export_tikz",
+	"shortLabel": "Export_tikz",
+	"paletteLabel": "Export_tikz",
+	"image": "gearshape"
+}*/
+(() => {
+
+  // Data Structures
+  class graphBounds {
+    constructor(lPoint, rPoint) {
+      this.leftPoint  = lPoint;
+      this.rightPoint = rPoint;
+    }
+  }
+
+  class colorInfo {
+    constructor(clrName, tikzStr) {
+      this.clrName = clrName;
+      this.tikzStr = tikzStr;
+    }
+  }
+
+  //
+  function getArrows(head, tail) {
+    arrows = ''
+    if (tail == 'FilledArrow') {
+      arrows += 'latex'
+    }
+    arrows += '-'
+    if (head == 'FilledArrow') {
+      arrows += 'latex'
+    }
+    return arrows
+  }
+
+  function componentToHex(c){
+		var hex = c.toString(16);
+		return hex.length == 1 ? "0" + hex : hex;
+	}
+
+	function HEXforColor(clrObj){
+		rv = clrObj.red
+		gv = clrObj.green
+		bv = clrObj.blue
+
+		r = Math.round(rv * 255)
+		g = Math.round(gv * 255)
+		b = Math.round(bv * 255)
+
+		colorHEX = "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+		return colorHEX
+	}
+
+  function buildColorTable(graphics) {
+    // \definecolor{c3a8eed}{RGB}{58,142,237}
+    //
+    clrTable = new Map();
+    tag = 0;
+
+    for (let i = 0; i < graphics.length; i++) {
+      if (graphics[i].strokeColor) {
+        key = HEXforColor(graphics[i].strokeColor);
+        if (clrTable.has(key) == false) {
+          clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].strokeColor.red * 255},${graphics[i].strokeColor.green * 255},${graphics[i].strokeColor.blue * 255}}`))
+          tag += 1
+        }
+      }
+      if(graphics[i].fillColor){
+        key = HEXforColor(graphics[i].fillColor);
+        if (clrTable.has(key) == false) {
+          clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].fillColor.red * 255},${graphics[i].fillColor.green * 255},${graphics[i].fillColor.blue * 255}}`))
+          tag += 1
+        }
+      }
+    }
+
+    return clrTable
+  }
+
+  function doLine(graphic,clrTable) {
+
+    draw = ''
+    type = graphic.lineType
+    tmp = LineType.Straight
+
+    if (graphic.lineType == LineType.Curved || graphic.lineType == LineType.Straight) {
+
+      // console.log(`Head: ${graphic.head.text} ${graphic.head.id} Tail: ${graphic.tail.text} ${graphic.tail.id}`)
+      // Origin of this drawing code: https://tex.stackexchange.com/questions/624010/using-tikz-spath3-with-nodes
+      //
+      // \path[spath/save=curveA] plot[smooth,tension=1] coordinates {
+        //   (S0)
+        //   (-17.600000262260437pt,3.89259546372341pt)
+        //   (15.955999737740058pt,28.233391483626292pt)
+        //   (S0)
+        // };
+      path = `\\path[spath/save=curveA] plot[smooth,tension=1] coordinates {`;
+      for (let i = 0; i < graphic.points.length; i++) {
+        originX = graphic.points[i].x - bounds.leftPoint.x
+        originY = -(graphic.points[i].y - bounds.leftPoint.y)
+        path += `   (${originX}pt, ${originY}pt)`
+      }
+      path += '}';
+      console.log(`${graphic.id}${graphic.connectedLines};`)
+      console.log(`${path};`)
+      // console.log(`${graphic.head} ${graphic.tail}`)
+      // console.log(`${graphic.head == null} ${graphic.tail == null}`)
+      // console.log(`${graphic.head != null} ${graphic.tail != null}`)
+      if ((graphic.head == null && graphic.tail == null) == false) {
+
+        // \tikzset{spath/.cd,split at intersections with={curveA}{4568border},split at intersections with={curveA}{4563border},remove components={curveA}{1,3}};
+        if (graphic.head == null && graphic.tail != null) {
+          tail = `split at intersections with={curveA}{${graphic.tail.id}border}`
+          head = ''
+          remove = '2'
+          reverse = 'reverse={curveA}'
+        }
+        else  if (graphic.head != null && graphic.tail == null) {
+          head = `split at intersections with={curveA}{${graphic.head.id}border}`
+          if (graphic.tailType != null) {
+            reverse = `reverse={curveA}`
+            remove = '1'
+          }
+          else {
+            reverse = ``
+            remove = '2'
+          }
+
+        }
+        else {
+          head = `split at intersections with={curveA}{${graphic.head.id}border}`
+          tail = `split at intersections with={curveA}{${graphic.tail.id}border}`
+          remove = '1,3'
+          reverse = ''
+        }
+        set = `\\tikzset{spath/.cd, ${reverse}, ${head},${tail},remove components={curveA}{${remove}}, ${reverse}}`;
+        console.log(`${set};`)
+      }
+      // \draw[-Latex,red!70!black,line width=2pt,spath/use=curveA];
+      arrows = getArrows(graphic.headType, graphic.tailType)
+      clr = clrTable.get( HEXforColor(graphic.strokeColor)).clrName
+      draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt,spath/use=curveA];`;
+      console.log(`${draw};\n`)
+    }
+    else {
+      draw = `${type}`
+      console.log(`${draw};`)
+    }
+  }
+
+  function doShape(graphic,bounds) {
+    rect = graphic.geometry;
+
+    // Rebaseline the shape's origin
+    originX = rect.origin.x - bounds.leftPoint.x
+    originY = -(rect.origin.y - bounds.leftPoint.y)
+
+    if (graphic.shape == "Circle") {
+      //\node[draw, circle, minimum size=72pt, inner sep=0pt, spath/save global=S0border] (S0) at (36pt,-36pt) {S0};
+      nodeName = graphic.id
+      nodeParams = `[draw, circle, minimum size=${rect.width}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeLoc = `(${originX + rect.width / 2}pt, ${originY - rect.height / 2}pt)`;
+      nodeText = graphic.text;
+    }
+    else if (graphic.shape == "Rectangle") {
+
+      nodeName = graphic.id;
+      nodeParams = `[draw, rectangle, minimum width=${rect.width}pt, minimum height=${rect.height}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeLoc = `(${originX + rect.width/2}pt, ${originY - rect.height/2}pt)`;
+      nodeText = graphic.text;
+    }
+    else {
+      console.log(`Unknown Shape: ${graphic.shape}`);
+      draw = ""
+    }
+
+    nodeText = ''
+    draw = `\\node ${nodeParams} (${nodeName}) at ${nodeLoc} \{${nodeText}\};`
+    console.log(`${draw}`);
+
+    // console.log(`${bounds.leftPoint.x} ${rect.origin.x} ${originX}`)
+    // console.log(`${bounds.leftPoint.y} ${rect.origin.y} ${originY}`)
+  }
+
+  function fileHeader() {
+
+    console.log('\\adjustbox{max width=12cm}{');
+    console.log(`\\begin{tikzpicture}`);
+  }
+
+  function fileTrailer() {
+
+    console.log(`\\end{tikzpicture}`)
+    console.log(`}`)
+  }
+
+  function findOffset(graphics) {
+
+    const xCoords = []
+    const yCoords = []
+    for (let i = 0; i < graphics.length; i++) {
+      console.log(`${rect.origin.x} ${rect.origin.y}`)
+      rect = graphics[i].geometry;
+	    xCoords.push(rect.origin.x);
+			yCoords.push(rect.origin.y);
+    }
+
+    minPoint = new Point(Math.min(...xCoords),Math.min(...yCoords)) //Upper left
+    maxPoint = new Point(Math.max(...xCoords),Math.max(...yCoords)) //Lower right
+    console.log(`Min: ${minPoint.x} ${minPoint.y}`)
+    console.log(`Max: ${maxPoint.x} ${maxPoint.y}`)
+
+    return (new graphBounds(minPoint, maxPoint));
+  }
+
+	var action = new PlugIn.Action(function(selection, sender){
+		// action code
+		// selection options: canvas, document, graphics, lines, solids, view
+
+		// console.log(`${selection.canvas.pageSize} ${selection.canvas.size}`)
+		console.log(`Total Items Selected: ${selection.graphics.length}`)
+    bounds = findOffset(selection.solids)
+    // console.log(`Bounds: ${bounds.leftPoint} - ${bounds.rightPoint}`);
+
+    fileHeader()
+
+    colorTable  = buildColorTable(selection.graphics)
+    for (const value of colorTable.values()) {
+      console.log(`${value.tikzStr}`);
+    }
+
+    console.log('\n% Draw all shapes')
+		for (let i = 0; i < selection.solids.length; i++) {
+      doShape(selection.solids[i], bounds)
+    }
+
+		console.log('\n% Draw all lines')
+		for (let i = 0; i < selection.lines.length; i++) {
+		    doLine(selection.lines[i],colorTable)
+    }
+		fileTrailer()
+	});
+
+	action.validate = function(selection, sender){
+		// validation code
+		// selection options: canvas, document, graphics, lines, solids, view
+		return true
+	};
+
+	return action;
+})();
