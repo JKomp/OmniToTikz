@@ -46,7 +46,7 @@
 		return hex.length == 1 ? "0" + hex : hex;
 	}
 
-	function HEXforColor(clrObj){
+  function HEXforColor(clrObj) {
 		rv = clrObj.red
 		gv = clrObj.green
 		bv = clrObj.blue
@@ -106,24 +106,25 @@
       for (let i = 0; i < graphic.points.length; i++) {
         originX = graphic.points[i].x - bounds.leftPoint.x
         originY = -(graphic.points[i].y - bounds.leftPoint.y)
-        path += `   (${originX}pt, ${originY}pt)`
+        path += `   (${originX.toFixed(5)}pt, ${originY.toFixed(5)}pt)`
       }
       path += '}';
-      console.log(`${graphic.id}${graphic.connectedLines};`)
+      // console.log(`${graphic.id}${graphic.connectedLines};`)
       console.log(`${path};`)
       // console.log(`${graphic.head} ${graphic.tail}`)
       // console.log(`${graphic.head == null} ${graphic.tail == null}`)
       // console.log(`${graphic.head != null} ${graphic.tail != null}`)
-      if ((graphic.head == null && graphic.tail == null) == false) {
+      if ((graphic.head instanceof Shape || graphic.tail instanceof Shape)) {
+      // if ((graphic.head == null && graphic.tail == null) == false) {
 
         // \tikzset{spath/.cd,split at intersections with={curveA}{4568border},split at intersections with={curveA}{4563border},remove components={curveA}{1,3}};
-        if (graphic.head == null && graphic.tail != null) {
+        if ((graphic.head == null || graphic.head instanceof Line) && graphic.tail != null && graphic.tail instanceof Shape) {
           tail = `split at intersections with={curveA}{${graphic.tail.id}border}`
           head = ''
           remove = '2'
           reverse = 'reverse={curveA}'
         }
-        else  if (graphic.head != null && graphic.tail == null) {
+        else  if (graphic.head != null && graphic.head instanceof Shape && (graphic.tail == null || graphic.tail instanceof Line)) {
           head = `split at intersections with={curveA}{${graphic.head.id}border}`
           if (graphic.tailType != null) {
             reverse = `reverse={curveA}`
@@ -140,13 +141,13 @@
           tail = `split at intersections with={curveA}{${graphic.tail.id}border}`
           remove = '1,3'
           reverse = ''
-        }
+       }
         set = `\\tikzset{spath/.cd, ${reverse}, ${head},${tail},remove components={curveA}{${remove}}, ${reverse}}`;
         console.log(`${set};`)
       }
       // \draw[-Latex,red!70!black,line width=2pt,spath/use=curveA];
       arrows = getArrows(graphic.headType, graphic.tailType)
-      clr = clrTable.get( HEXforColor(graphic.strokeColor)).clrName
+      clr = `${clrTable.get( HEXforColor(graphic.strokeColor)).clrName}, opacity=${graphic.strokeColor.alpha}`
       draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt,spath/use=curveA];`;
       console.log(`${draw};\n`)
     }
@@ -163,19 +164,26 @@
     originX = rect.origin.x - bounds.leftPoint.x
     originY = -(rect.origin.y - bounds.leftPoint.y)
 
+    nodeName = graphic.id
+    nodeLoc = `(${originX + rect.width / 2}pt, ${originY - rect.height / 2}pt)`;
+    nodeText = graphic.text;
+
+    drawClr = ''
+    if (graphic.strokeColor != null) {
+      drawClr = `draw=${clrTable.get(HEXforColor(graphic.strokeColor)).clrName}, opacity=${graphic.strokeColor.alpha}`
+    }
+    fillClr = ''
+    if (graphic.fillColor != null) {
+      fillClr = `fill=${clrTable.get( HEXforColor(graphic.fillColor)).clrName}, opacity=${graphic.fillColor.alpha}`
+    }
+
     if (graphic.shape == "Circle") {
       //\node[draw, circle, minimum size=72pt, inner sep=0pt, spath/save global=S0border] (S0) at (36pt,-36pt) {S0};
-      nodeName = graphic.id
-      nodeParams = `[draw, circle, minimum size=${rect.width}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
-      nodeLoc = `(${originX + rect.width / 2}pt, ${originY - rect.height / 2}pt)`;
-      nodeText = graphic.text;
+      nodeParams = `[${drawClr}, ${fillClr}, circle, minimum size=${rect.width}pt,line width=${graphic.strokeThickness}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else if (graphic.shape == "Rectangle") {
 
-      nodeName = graphic.id;
-      nodeParams = `[draw, rectangle, minimum width=${rect.width}pt, minimum height=${rect.height}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
-      nodeLoc = `(${originX + rect.width/2}pt, ${originY - rect.height/2}pt)`;
-      nodeText = graphic.text;
+      nodeParams = `[${drawClr}, ${fillClr}, rectangle, minimum width=${rect.width}pt,line width=${graphic.strokeThickness}pt, minimum height=${rect.height}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else {
       console.log(`Unknown Shape: ${graphic.shape}`);
@@ -207,8 +215,8 @@
     const xCoords = []
     const yCoords = []
     for (let i = 0; i < graphics.length; i++) {
-      console.log(`${rect.origin.x} ${rect.origin.y}`)
       rect = graphics[i].geometry;
+      console.log(`${rect.origin.x} ${rect.origin.y}`)
 	    xCoords.push(rect.origin.x);
 			yCoords.push(rect.origin.y);
     }
@@ -227,7 +235,8 @@
 
 		// console.log(`${selection.canvas.pageSize} ${selection.canvas.size}`)
 		console.log(`Total Items Selected: ${selection.graphics.length}`)
-    bounds = findOffset(selection.solids)
+    bounds = findOffset(selection.graphics)
+
     // console.log(`Bounds: ${bounds.leftPoint} - ${bounds.rightPoint}`);
 
     fileHeader()
