@@ -1,4 +1,5 @@
 [![GitHub License](https://img.shields.io/github/license/mashape/apistatus?branch=master&label=License&logo=GitHub&logoColor=ffffff&labelColor=282828&color=informational&style=flat)]()  
+![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)  
 
 # OmniToTikz 
 ![Static Badge](https://img.shields.io/badge/Version-0.1-blue)
