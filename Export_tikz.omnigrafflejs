@@ -67,17 +67,21 @@
 
     for (let i = 0; i < graphics.length; i++) {
       if (graphics[i].strokeColor) {
-        key = HEXforColor(graphics[i].strokeColor);
-        if (clrTable.has(key) == false) {
-          clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].strokeColor.red * 255},${graphics[i].strokeColor.green * 255},${graphics[i].strokeColor.blue * 255}}`))
-          tag += 1
+        if (graphics[i].strokeColor.colorSpace == ColorSpace.RGB) {
+          key = HEXforColor(graphics[i].strokeColor);
+          if (clrTable.has(key) == false) {
+            clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].strokeColor.red * 255},${graphics[i].strokeColor.green * 255},${graphics[i].strokeColor.blue * 255}}`))
+            tag += 1
+          }
         }
       }
       if(graphics[i].fillColor){
-        key = HEXforColor(graphics[i].fillColor);
-        if (clrTable.has(key) == false) {
-          clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].fillColor.red * 255},${graphics[i].fillColor.green * 255},${graphics[i].fillColor.blue * 255}}`))
-          tag += 1
+        if (graphics[i].fillColor.colorSpace == ColorSpace.RGB) {
+          key = HEXforColor(graphics[i].fillColor);
+          if (clrTable.has(key) == false) {
+            clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].fillColor.red * 255},${graphics[i].fillColor.green * 255},${graphics[i].fillColor.blue * 255}}`))
+            tag += 1
+          }
         }
       }
     }
@@ -159,7 +163,19 @@
     }
   }
 
-  function doShape(graphic,bounds) {
+  function getHorizontalAlignment(g) {
+    if (g.textHorizontalAlignment == HorizontalTextAlignment.Left) {
+      return 'left';
+    }
+    if (g.textHorizontalAlignment == HorizontalTextAlignment.Center) {
+      return 'center';
+    }
+    if (g.textHorizontalAlignment == HorizontalTextAlignment.Right) {
+      return 'right';
+    }
+  }
+
+  function doShape(graphic, bounds) {
     rect = graphic.geometry;
 
     // Rebaseline the shape's origin
@@ -167,32 +183,47 @@
     originY = -(rect.origin.y - bounds.leftPoint.y)
 
     nodeName = graphic.id
-    nodeLoc = `(${originX + rect.width / 2}pt, ${originY - rect.height / 2}pt)`;
-    nodeText = graphic.text;
+    nodeLoc = `(${(originX + rect.width / 2).toFixed(5)}pt, ${(originY - rect.height / 2).toFixed(5)}pt)`;
+    re = /\n/gi
+    nodeText = (graphic.text).replace(re, '\\\\');
+    re = /[^\x00-\x7F]+/gi
+    nodeText = (nodeText).replace(re, '-');
+    re = /\}/gi
+    nodeText = (nodeText).replace(re, '\\}');
+    re = /\{/gi
+    nodeText = (nodeText).replace(re, '\\{');
 
+    alignment = getHorizontalAlignment(graphic);
+    minSize = rect.width.toFixed(5)
+
+    textWidth = ''
+    if (graphic.textWraps) {
+      textWidth = `text width = ${minSize - (2 * graphic.textHorizontalPadding)}`
+    }
+    console.log(`% ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding}`)
     drawClr = ''
     if (graphic.strokeColor != null) {
       drawClr = `draw=${clrTable.get(HEXforColor(graphic.strokeColor)).clrName}, opacity=${graphic.strokeColor.alpha}`
     }
     fillClr = ''
     if (graphic.fillColor != null) {
-      fillClr = `fill=${clrTable.get( HEXforColor(graphic.fillColor)).clrName}, opacity=${graphic.fillColor.alpha}`
+      fillClr = `fill=${clrTable.get(HEXforColor(graphic.fillColor)).clrName}, opacity=${graphic.fillColor.alpha}`
     }
 
     if (graphic.shape == "Circle") {
       //\node[draw, circle, minimum size=72pt, inner sep=0pt, spath/save global=S0border] (S0) at (36pt,-36pt) {S0};
-      nodeParams = `[${drawClr}, ${fillClr}, circle, minimum size=${rect.width}pt,line width=${graphic.strokeThickness}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeParams = `[${drawClr}, ${fillClr}, font=\\fontsize{${ graphic.textSize }} { 0 } \\selectfont, align=${alignment}, circle,line width=${graphic.strokeThickness}pt, minimum size=${minSize}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else if (graphic.shape == "Rectangle") {
 
-      nodeParams = `[${drawClr}, ${fillClr}, rectangle, minimum width=${rect.width}pt,line width=${graphic.strokeThickness}pt, minimum height=${rect.height}pt, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeParams = `[${drawClr}, ${fillClr}, font=\\fontsize{${ graphic.textSize }} { 0 } \\selectfont, align=${alignment}, rectangle,line width=${graphic.strokeThickness}pt, minimum width=${minSize}pt, minimum height=${(rect.height).toFixed(5)}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else {
       console.log(`Unknown Shape: ${graphic.shape}`);
       draw = ""
     }
 
-    nodeText = ''
+    // nodeText = ''
     draw = `\\node ${nodeParams} (${nodeName}) at ${nodeLoc} \{${nodeText}\};`
     console.log(`${draw}`);
 
