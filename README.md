@@ -2,7 +2,7 @@
 ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)  
 
 # OmniToTikz 
-![Static Badge](https://img.shields.io/badge/Version-0.2-blue)
+![Static Badge](https://img.shields.io/badge/Version-0.3-blue)
 
 OmniGraffle plug-in to export selection as a tikz graphic
 
@@ -18,15 +18,23 @@ Instructions for installation can be found on Omni's [website](https://omni-auto
 ## What Works
 * Exports all lines with color, opacity, weight, and arrows (straight and curved lines only)
 * Exports all shapes with fill and stroke color and opacity, line weight, (rectangles and circles)
+* Exports Text 
+  * Some formatting (alignment, wrapping, font size)
+  * Carriage returns are converted to tikz '\\\\'
+  * Curly brackets are properly inserted
 
 ## What Doesn't Work
 Lots of things but in particular:
 * Bezier and Orthogonal lines
+* Grouped graphics
 * Ignores dashed line format - all lines are solid
 * Shapes that are not rectangles or circles
 * Shadows
 * Imported graphic images
-* Text - the basic code is there and the text nodes are created but I use a lot of unicode characters and they generate tikz errors so I'm not currently including the text.
+* Text
+  * OmniGraffle API only provides the formatting of the first char. Therefore all text is formatted per the first char
+  * Unicode chars are currently replaced with '-'. Additionally some chars like > and < are improperly displayed
+  * If the first char has coloring, the color is ignored.
 * Saving to a file
 
 ## Notes
