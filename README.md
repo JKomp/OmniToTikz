@@ -9,6 +9,8 @@ OmniGraffle plug-in to export selection as a tikz graphic
 
 Instructions for installation can be found on Omni's [website](https://omni-automation.com/omnigraffle/setup.html)
 
+You may need to add some tikz libraries (```usetikzlibrary```) to your document. I've not run this in a bare document to compile the bare minimum list of libraries. I import a local tikzExtras.tex that loads a bunch of items.
+
 ## How to Use
 * Select one or more items in drawing
 * Select ```Export_tikz``` from the ```Automation``` menu
