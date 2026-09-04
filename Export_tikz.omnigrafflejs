@@ -4,7 +4,7 @@
 	"targets": ["omnigraffle"],
 	"author": "John Komp",
 	"identifier": "com.sbindustries.gentikz",
-	"version": "0.2",
+	"version": "0.3",
 	"description": "Convert and export current selection as a tikz graphic",
 	"label": "Export_tikz",
 	"shortLabel": "Export_tikz",
