@@ -4,7 +4,7 @@
 	"targets": ["omnigraffle"],
 	"author": "John Komp",
 	"identifier": "com.sbindustries.gentikz",
-	"version": "0.3",
+	"version": "0.4",
 	"description": "Convert and export current selection as a tikz graphic",
 	"label": "Export_tikz",
 	"shortLabel": "Export_tikz",
@@ -12,6 +12,9 @@
 	"image": "gearshape"
 }*/
 (() => {
+
+  clrTable = new Map();
+  clrTag = 0;
 
   // Data Structures
   class graphBounds {
@@ -47,50 +50,29 @@
 	}
 
   function HEXforColor(clrObj) {
-		rv = clrObj.red
-		gv = clrObj.green
-		bv = clrObj.blue
 
-		r = Math.round(rv * 255)
-		g = Math.round(gv * 255)
-		b = Math.round(bv * 255)
+		r = Math.round(clrObj.red   * 255)
+		g = Math.round(clrObj.green * 255)
+		b = Math.round(clrObj.blue  * 255)
 
-		colorHEX = "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
-		return colorHEX
+		return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 	}
 
-  function buildColorTable(graphics) {
-    // \definecolor{c3a8eed}{RGB}{58,142,237}
-    //
-    clrTable = new Map();
-    tag = 0;
+	// Find the given color in the color table. Add it if missing.
+  function getColor(color) {
 
-    function addColor(color) {
-      if (color.colorSpace == ColorSpace.RGB) {
-        key = HEXforColor(color);
-        if (clrTable.has(key) == false) {
-          clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${color.red * 255},${color.green * 255},${color.blue * 255}}`))
-          tag += 1
-        }
+    key = ''
+    if ((color.colorSpace == ColorSpace.RGB)||(color.colorSpace == ColorSpace.White)) {
+      key = HEXforColor(color);
+      if (clrTable.has(key) == false) {
+        clrTable.set(key, new colorInfo(`c${clrTag}`, `\\definecolor{c${clrTag}} {RGB} {${Math.round(color.red * 255)},${Math.round(color.green * 255)},${Math.round(color.blue  * 255)}}`))
+        clrTag += 1
       }
     }
-
-    for (let i = 0; i < graphics.length; i++) {
-      if (graphics[i].strokeColor) {
-        addColor(graphics[i].strokeColor)
-      }
-      if(graphics[i].fillColor){
-        addColor(graphics[i].fillColor)
-      }
-      if (graphics[i].text) {
-          addColor(graphics[i].textColor)
-      }
-    }
-
-    return clrTable
+    return clrTable.get(key)
   }
 
-  function doLine(graphic,clrTable) {
+  function doLine(graphic) {
     tikzLine = ''
     draw = ''
     type = graphic.lineType
@@ -154,7 +136,7 @@
       }
       // \draw[-Latex,red!70!black,line width=2pt,spath/use=curveA];
       arrows = getArrows(graphic.headType, graphic.tailType)
-      clr = `${clrTable.get( HEXforColor(graphic.strokeColor)).clrName}, opacity=${graphic.strokeColor.alpha}`
+      clr = `${getColor(graphic.strokeColor).clrName}, opacity=${graphic.strokeColor.alpha}`
       draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt,spath/use=curveA];`;
       tikzLine += `${draw};\n`
     }
@@ -209,12 +191,12 @@
 
     drawClr = ''
     if (graphic.strokeColor != null) {
-      drawClr = `draw=${clrTable.get(HEXforColor(graphic.strokeColor)).clrName}, opacity=${graphic.strokeColor.alpha}`
+      drawClr = `draw=${getColor(graphic.strokeColor).clrName}, opacity=${graphic.strokeColor.alpha}`
     }
 
     fillClr = ''
     if (graphic.fillColor != null) {
-      fillClr = `fill=${clrTable.get(HEXforColor(graphic.fillColor)).clrName}, opacity=${graphic.fillColor.alpha}`
+      fillClr = `fill=${getColor(graphic.fillColor).clrName}, opacity=${graphic.fillColor.alpha}`
     }
 
     if (graphic.shape == "Circle") {
@@ -233,7 +215,7 @@
 
     // Note: tikz textcolor {color}{text to color} will fail if 'text to color' contains a CR (\\)
     if (nodeText.length > 0) {
-      nodeText = `\\textcolor\{${clrTable.get(HEXforColor(graphic.textColor)).clrName}\}${nodeText}`
+      nodeText = `\\textcolor\{${getColor(graphic.textColor).clrName}\}${nodeText}`
     }
     draw = `\\node ${nodeParams} (${nodeName}) at ${nodeLoc} \{${nodeText}\};`
     tikzLine += `${draw}\n`;
@@ -286,35 +268,39 @@
 
     fileHeader()
 
-    colorTable  = buildColorTable(selection.graphics)
-    for (const value of colorTable.values()) {
-      console.log(`${value.tikzStr}`);
-    }
-
     tikzShapes = ''
     tikzShapes += '\n% Draw all shapes\n'
 		for (let i = 0; i < selection.solids.length; i++) {
       tikzShapes += doShape(selection.solids[i], bounds) + '\n'
     }
-    console.log(`${tikzShapes}`)
 
     tikzLines = ''
 		tikzLines += '\n% Draw all lines\n'
 		for (let i = 0; i < selection.lines.length; i++) {
-		  tikzLines += doLine(selection.lines[i],colorTable) + '\n'
+		  tikzLines += doLine(selection.lines[i]) + '\n'
     }
+
+    for (let i = 0; i < selection.graphics.length; i++) {
+      if (selection.graphics[i] instanceof Group) {
+        for (let j = 0; j < selection.graphics[i].graphics.length; j++) {
+          if (selection.graphics[i].graphics[j] instanceof Shape){
+            tikzShapes += doShape(selection.graphics[i].graphics[j], bounds) + '\n'
+          }
+          if (selection.graphics[i].graphics[j] instanceof Line){
+            tikzLines += doLine(selection.graphics[i].graphics[j]) + '\n'
+          }
+        }
+      }
+    }
+
+		//Dump all the tikz lines to the console
+    for (const value of clrTable.values()) {
+      console.log(`${value.tikzStr}`);
+    }
+
+    console.log(`${tikzShapes}`)
 		console.log(`${tikzLines}`)
 
-    // for (let i = 0; i < selection.graphics.length; i++) {
-    //   if (selection.graphics[i] instanceof Group) {
-    //     for (let j = 0; j < selection.graphics[i].graphics.length; j++) {
-    //       console.log(`x:${selection.graphics[i].graphics[j]}`)
-    //       if (selection.graphics[i].graphics[j] instanceof Shape){
-    //         doShape(selection.graphics[i].graphics[j], bounds)
-    //       }
-    //     }
-    //   }
-    // }
     fileTrailer()
 
 	});
