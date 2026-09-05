@@ -65,24 +65,25 @@
     clrTable = new Map();
     tag = 0;
 
-    for (let i = 0; i < graphics.length; i++) {
-      if (graphics[i].strokeColor) {
-        if (graphics[i].strokeColor.colorSpace == ColorSpace.RGB) {
-          key = HEXforColor(graphics[i].strokeColor);
-          if (clrTable.has(key) == false) {
-            clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].strokeColor.red * 255},${graphics[i].strokeColor.green * 255},${graphics[i].strokeColor.blue * 255}}`))
-            tag += 1
-          }
+    function addColor(color) {
+      if (color.colorSpace == ColorSpace.RGB) {
+        key = HEXforColor(color);
+        if (clrTable.has(key) == false) {
+          clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${color.red * 255},${color.green * 255},${color.blue * 255}}`))
+          tag += 1
         }
       }
+    }
+
+    for (let i = 0; i < graphics.length; i++) {
+      if (graphics[i].strokeColor) {
+        addColor(graphics[i].strokeColor)
+      }
       if(graphics[i].fillColor){
-        if (graphics[i].fillColor.colorSpace == ColorSpace.RGB) {
-          key = HEXforColor(graphics[i].fillColor);
-          if (clrTable.has(key) == false) {
-            clrTable.set(key, new colorInfo(`c${tag}`, `\\definecolor{c${tag}} {RGB} {${graphics[i].fillColor.red * 255},${graphics[i].fillColor.green * 255},${graphics[i].fillColor.blue * 255}}`))
-            tag += 1
-          }
-        }
+        addColor(graphics[i].fillColor)
+      }
+      if (graphics[i].text) {
+          addColor(graphics[i].textColor)
       }
     }
 
@@ -90,7 +91,7 @@
   }
 
   function doLine(graphic,clrTable) {
-
+    tikzLine = ''
     draw = ''
     type = graphic.lineType
     tmp = LineType.Straight
@@ -114,7 +115,7 @@
       }
       path += '}';
       // console.log(`${graphic.id}${graphic.connectedLines};`)
-      console.log(`${path};`)
+      tikzLine += `${path};\n`
       // console.log(`${graphic.head} ${graphic.tail}`)
       // console.log(`${graphic.head == null} ${graphic.tail == null}`)
       // console.log(`${graphic.head != null} ${graphic.tail != null}`)
@@ -149,18 +150,20 @@
           reverse = ''
        }
         set = `\\tikzset{spath/.cd, ${reverse}, ${head},${tail},remove components={curveA}{${remove}}, ${reverse}}`;
-        console.log(`${set};`)
+        tikzLine += `${set};\n`
       }
       // \draw[-Latex,red!70!black,line width=2pt,spath/use=curveA];
       arrows = getArrows(graphic.headType, graphic.tailType)
       clr = `${clrTable.get( HEXforColor(graphic.strokeColor)).clrName}, opacity=${graphic.strokeColor.alpha}`
       draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt,spath/use=curveA];`;
-      console.log(`${draw};\n`)
+      tikzLine += `${draw};\n`
     }
     else {
       draw = `${type}`
-      console.log(`${draw};`)
+      tikzLine += `% Unhandled line type: ${draw};\n`
     }
+
+    return tikzLine
   }
 
   function getHorizontalAlignment(g) {
@@ -176,6 +179,7 @@
   }
 
   function doShape(graphic, bounds) {
+    tikzLine = ''
     rect = graphic.geometry;
 
     // Rebaseline the shape's origin
@@ -200,11 +204,14 @@
     if (graphic.textWraps) {
       textWidth = `text width = ${minSize - (2 * graphic.textHorizontalPadding)}`
     }
-    console.log(`% ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding}`)
+
+    tikzLine += `% ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding}\n`
+
     drawClr = ''
     if (graphic.strokeColor != null) {
       drawClr = `draw=${clrTable.get(HEXforColor(graphic.strokeColor)).clrName}, opacity=${graphic.strokeColor.alpha}`
     }
+
     fillClr = ''
     if (graphic.fillColor != null) {
       fillClr = `fill=${clrTable.get(HEXforColor(graphic.fillColor)).clrName}, opacity=${graphic.fillColor.alpha}`
@@ -220,15 +227,20 @@
     }
     else {
       console.log(`Unknown Shape: ${graphic.shape}`);
-      draw = ""
+      tikzLine = `%\n Unknown Shape: ${graphic.shape}\n`;
+      return tikzLine
     }
 
-    // nodeText = ''
+    // Note: tikz textcolor {color}{text to color} will fail if 'text to color' contains a CR (\\)
+    if (nodeText.length > 0) {
+      nodeText = `\\textcolor\{${clrTable.get(HEXforColor(graphic.textColor)).clrName}\}${nodeText}`
+    }
     draw = `\\node ${nodeParams} (${nodeName}) at ${nodeLoc} \{${nodeText}\};`
-    console.log(`${draw}`);
+    tikzLine += `${draw}\n`;
 
     // console.log(`${bounds.leftPoint.x} ${rect.origin.x} ${originX}`)
     // console.log(`${bounds.leftPoint.y} ${rect.origin.y} ${originY}`)
+    return tikzLine
   }
 
   function fileHeader() {
@@ -279,16 +291,32 @@
       console.log(`${value.tikzStr}`);
     }
 
-    console.log('\n% Draw all shapes')
+    tikzShapes = ''
+    tikzShapes += '\n% Draw all shapes\n'
 		for (let i = 0; i < selection.solids.length; i++) {
-      doShape(selection.solids[i], bounds)
+      tikzShapes += doShape(selection.solids[i], bounds) + '\n'
     }
+    console.log(`${tikzShapes}`)
 
-		console.log('\n% Draw all lines')
+    tikzLines = ''
+		tikzLines += '\n% Draw all lines\n'
 		for (let i = 0; i < selection.lines.length; i++) {
-		    doLine(selection.lines[i],colorTable)
+		  tikzLines += doLine(selection.lines[i],colorTable) + '\n'
     }
-		fileTrailer()
+		console.log(`${tikzLines}`)
+
+    // for (let i = 0; i < selection.graphics.length; i++) {
+    //   if (selection.graphics[i] instanceof Group) {
+    //     for (let j = 0; j < selection.graphics[i].graphics.length; j++) {
+    //       console.log(`x:${selection.graphics[i].graphics[j]}`)
+    //       if (selection.graphics[i].graphics[j] instanceof Shape){
+    //         doShape(selection.graphics[i].graphics[j], bounds)
+    //       }
+    //     }
+    //   }
+    // }
+    fileTrailer()
+
 	});
 
 	action.validate = function(selection, sender){
