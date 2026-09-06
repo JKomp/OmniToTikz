@@ -155,6 +155,42 @@
     [HorizontalTextAlignment.Right,   "right"],
   ]);
 
+  function addEscapes(str) {
+    re = /([{}_])/gi
+    const matches = Array.from(str.matchAll(re));
+    if (matches.length > 0) {
+      nodeText = ''
+      idx = 0
+      for (let match of matches) {
+        nodeText += str.substr(idx, match.index - idx) + '\\'
+        idx = match.index
+      }
+      nodeText += str.substr(idx)
+    }
+    else {
+      nodeText = str
+    }
+    return nodeText
+  }
+
+  function addMathMode(str) {
+    re = /([<>])/gi
+    const matches = Array.from(str.matchAll(re));
+    if (matches.length > 0) {
+      nodeText = ''
+      idx = 0
+      for (let match of matches) {
+        nodeText += str.substr(idx, match.index - idx) + '$' + str.substr(match.index,1) + '$'
+        idx = match.index+1
+      }
+      nodeText += str.substr(idx)
+    }
+    else {
+      nodeText = str
+    }
+    return nodeText
+  }
+
   function doShape(graphic, bounds) {
     tikzLine = ''
     rect = graphic.geometry;
@@ -165,14 +201,13 @@
 
     nodeName = graphic.id
     nodeLoc = `(${(originX + rect.width / 2).toFixed(5)}pt, ${(originY - rect.height / 2).toFixed(5)}pt)`;
+
     re = /\n/gi
     nodeText = (graphic.text).replace(re, '\\\\');
     re = /[^\x00-\x7F]+/gi
     nodeText = (nodeText).replace(re, '-');
-    re = /\}/gi
-    nodeText = (nodeText).replace(re, '\\}');
-    re = /\{/gi
-    nodeText = (nodeText).replace(re, '\\{');
+    nodeText = addEscapes(nodeText);
+    nodeText = addMathMode(nodeText);
 
     alignment = NAME_FOR_ALIGNMENT.get(graphic.textHorizontalAlignment);
     minSize = rect.width.toFixed(5)
