@@ -45,7 +45,7 @@ Lots of things but in particular:
 * Selection of part of a drawing that includes lines connected to shapes not in the selection (e.g. going outside of the selection)
 * Text
   * OmniGraffle API only provides the formatting of the first char. Therefore all text is formatted per the first char
-  * Unicode chars are currently replaced with '-'. Additionally some chars like > and < are improperly displayed
+  * Unicode chars are currently replaced with '-'. Additionally chars only valid in math mode may not be properly displayed.
   * Font type is not carried over
 * Saving to a file
 
