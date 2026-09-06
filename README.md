@@ -6,8 +6,12 @@
 
 OmniGraffle plug-in to export selection as a tikz graphic.
 
-This automation does the best it can based on what's accessible through the OmniGraffle API. As such, all text is exported but most formatting is lost. I try to structure the tikz statement to ease the post export editing that adds back the formatting. There appears to be no method to determine graphic hierarchy within an OmniGraffle layer so graphics may end up drawn underneath other graphics when the original had them in the opposite order.
+This automation does the best it can based on what's accessible through the OmniGraffle API. As such, all text is exported but most formatting is lost. I try to structure the tikz statement to ease the post export editing that adds back the formatting. There appears to be no method to determine graphic hierarchy within an OmniGraffle layer so graphics may end up drawn underneath other graphics when the original had them in the opposite order. In the demonstration images below the red circles are a group of a red circle and a red number. All the circles have a white fill except for number 5 to highlight this issue.
 
+
+OmniGraffle 7 Image       |  tikz Translation
+:-------------------------:|:-------------------------:
+![](ExampleOmni.png)  |  ![](ExampleTikz.png)
 
 Instructions for installation can be found on Omni's [website](https://omni-automation.com/omnigraffle/setup.html)
 
