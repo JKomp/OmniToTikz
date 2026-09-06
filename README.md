@@ -2,9 +2,11 @@
 ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)  
 
 # OmniToTikz 
-![Static Badge](https://img.shields.io/badge/Version-0.3-blue)
+![Static Badge](https://img.shields.io/badge/Version-0.4-blue)
 
-OmniGraffle plug-in to export selection as a tikz graphic
+OmniGraffle plug-in to export selection as a tikz graphic.
+
+This automation does the best it can based on what's accessible through the OmniGraffle API. As such, all text is exported but most formatting is lost. I try to structure the tikz statement to ease the post export editing that adds back the formatting. There appears to be no method to determine graphic hierarchy within an OmniGraffle layer so graphics may end up drawn underneath other graphics when the original had them in the opposite order.
 
 
 Instructions for installation can be found on Omni's [website](https://omni-automation.com/omnigraffle/setup.html)
@@ -22,13 +24,16 @@ You may need to add some tikz libraries (```usetikzlibrary```) to your document.
 * Exports all shapes with fill and stroke color and opacity, line weight, (rectangles and circles)
 * Exports Text 
   * Some formatting (alignment, wrapping, font size)
+  * If the first char has color, it is colored. 
   * Carriage returns are converted to tikz '\\\\'
   * Curly brackets are properly inserted
+* Single level of groups are supported (not group of group)
 
 ## What Doesn't Work
 Lots of things but in particular:
 * Bezier and Orthogonal lines
-* Grouped graphics
+* Groups of groups
+* Order of graphics. A graphic may be hidden if drawn under another that has a fill color.
 * Ignores dashed line format - all lines are solid
 * Shapes that are not rectangles or circles
 * Shadows
