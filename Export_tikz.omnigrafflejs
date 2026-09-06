@@ -148,17 +148,12 @@
     return tikzLine
   }
 
-  function getHorizontalAlignment(g) {
-    if (g.textHorizontalAlignment == HorizontalTextAlignment.Left) {
-      return 'left';
-    }
-    if (g.textHorizontalAlignment == HorizontalTextAlignment.Center) {
-      return 'center';
-    }
-    if (g.textHorizontalAlignment == HorizontalTextAlignment.Right) {
-      return 'right';
-    }
-  }
+  const NAME_FOR_ALIGNMENT = new Map([
+    [HorizontalTextAlignment.Center,  "center"],
+    [HorizontalTextAlignment.Justify, "justify"],
+    [HorizontalTextAlignment.Left,    "left"],
+    [HorizontalTextAlignment.Right,   "right"],
+  ]);
 
   function doShape(graphic, bounds) {
     tikzLine = ''
@@ -179,7 +174,7 @@
     re = /\{/gi
     nodeText = (nodeText).replace(re, '\\{');
 
-    alignment = getHorizontalAlignment(graphic);
+    alignment = NAME_FOR_ALIGNMENT.get(graphic.textHorizontalAlignment);
     minSize = rect.width.toFixed(5)
 
     textWidth = ''
