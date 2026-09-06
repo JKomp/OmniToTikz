@@ -28,9 +28,8 @@ You may need to add some tikz libraries (```usetikzlibrary```) to your document.
 * Exports all shapes with fill and stroke color and opacity, line weight, (rectangles and circles)
 * Exports Text 
   * Some formatting (alignment, wrapping, font size)
-  * If the first char has color, it is colored. 
-  * Carriage returns are converted to tikz '\\\\'
-  * Curly brackets are properly inserted
+  * If the first char has color, that char is colored. If the entire line was colored, still only the first in the tikz export.
+  * Carriage returns are converted to tikz '\\\\' and text align set to match original drawing
 * Single level of groups are supported (not group of group)
 
 ## What Doesn't Work
@@ -41,11 +40,13 @@ Lots of things but in particular:
 * Ignores dashed line format - all lines are solid
 * Shapes that are not rectangles or circles
 * Shadows
+* Line ends other than an arrow
 * Imported graphic images
+* Selection of part of a drawing that includes lines connected to shapes not in the selection (e.g. going outside of the selection)
 * Text
   * OmniGraffle API only provides the formatting of the first char. Therefore all text is formatted per the first char
   * Unicode chars are currently replaced with '-'. Additionally some chars like > and < are improperly displayed
-  * If the first char has coloring, the color is ignored.
+  * Font type is not carried over
 * Saving to a file
 
 ## Notes
