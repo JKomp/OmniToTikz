@@ -20,7 +20,7 @@ You may need to add some tikz libraries (```usetikzlibrary```) to your document.
 ## How to Use
 * Select one or more items in drawing
 * Select ```Export_tikz``` from the ```Automation``` menu
-* Copy tikz code from the OmniGraffle Automation Console (Automation &rarr; Show Console) Code is enclosed by an ```adjustbox``` statement.
+* Copy tikz code from the OmniGraffle Automation Console (Automation &rarr; Show Console). Code is enclosed by an ```adjustbox``` statement.
 
   
 ## What Works
