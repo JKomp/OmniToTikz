@@ -2,11 +2,11 @@
 ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)  
 
 # OmniToTikz 
-![Static Badge](https://img.shields.io/badge/Version-0.4-blue)
+![Static Badge](https://img.shields.io/badge/Version-0.5-blue)
 
 OmniGraffle plug-in to export selection as a tikz graphic.
 
-This automation does the best it can based on what's accessible through the OmniGraffle API. As such, all text is exported but most formatting is lost. I try to structure the tikz statement to ease the post export editing that adds back the formatting. There appears to be no method to determine graphic hierarchy within an OmniGraffle layer so graphics may end up drawn underneath other graphics when the original had them in the opposite order. In the demonstration images below the red circles are a group of a red circle and a red number. All the circles have a white fill except for number 5 to highlight this issue.
+This automation does the best it can based on what's accessible through the OmniGraffle API. As such, all text is exported but most formatting is lost. I try to structure the tikz statement to ease the post export editing that adds back the formatting. 
 
 
 OmniGraffle 7 Image       |  tikz Translation
@@ -36,7 +36,6 @@ You may need to add some tikz libraries (```usetikzlibrary```) to your document.
 Lots of things but in particular:
 * Bezier and Orthogonal lines
 * Groups of groups
-* Order of graphics. A graphic may be hidden if drawn under another that has a fill color.
 * Ignores dashed line format - all lines are solid
 * Shapes that are not rectangles or circles
 * Shadows
@@ -56,5 +55,6 @@ I use Zed as my editor for this work. If you want to play with the code in Zed y
   "JavaScript": ["omnigrafflejs"],
   }
 ```
+For graphics foreground/background ordering I took a naive approach that the shape graphic ID defined relative positions between graphic items where lower numbers are closer to the foreground. I did not attempt the same with line objects so lines that ran under a shape will be in the foreground.
 
 This work is based on the OmniGraffle 7 Omni [API](https://omni-automation.com/omnigraffle/OG-API.html#LineType)
