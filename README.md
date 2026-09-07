@@ -30,6 +30,7 @@ You may need to add some tikz libraries (```usetikzlibrary```) to your document.
   * Some formatting (alignment, wrapping, font size)
   * If the first char has color, that char is colored. If the entire line was colored, still only the first in the tikz export.
   * Carriage returns are converted to tikz '\\\\' and text align set to match original drawing
+  * If font used was Helvetica of any form, it will be set to Helvetica (phv) in the text node. Code able to translate others, just no other fonts in translation table
 * Single level of groups are supported (not group of group)
 
 ## What Doesn't Work
