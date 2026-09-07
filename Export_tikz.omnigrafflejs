@@ -4,7 +4,7 @@
 	"targets": ["omnigraffle"],
 	"author": "John Komp",
 	"identifier": "com.sbindustries.gentikz",
-	"version": "0.4",
+	"version": "0.5",
 	"description": "Convert and export current selection as a tikz graphic",
 	"label": "Export_tikz",
 	"shortLabel": "Export_tikz",
@@ -76,7 +76,6 @@
     tikzLine = ''
     draw = ''
     type = graphic.lineType
-    tmp = LineType.Straight
 
     if (graphic.lineType == LineType.Curved || graphic.lineType == LineType.Straight) {
 
@@ -217,7 +216,7 @@
       textWidth = `text width = ${minSize - (2 * graphic.textHorizontalPadding)}`
     }
 
-    tikzLine += `% ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding}\n`
+    tikzLine += `% ${nodeName}: ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding}\n`
 
     drawClr = ''
     if (graphic.strokeColor != null) {
@@ -252,7 +251,7 @@
 
     // console.log(`${bounds.leftPoint.x} ${rect.origin.x} ${originX}`)
     // console.log(`${bounds.leftPoint.y} ${rect.origin.y} ${originY}`)
-    return tikzLine
+    return [nodeName,tikzLine]
   }
 
   function fileHeader() {
@@ -298,23 +297,20 @@
 
     fileHeader()
 
-    tikzShapes = ''
-    tikzShapes += '\n% Draw all shapes\n'
-		for (let i = 0; i < selection.solids.length; i++) {
-      tikzShapes += doShape(selection.solids[i], bounds) + '\n'
-    }
-
-    tikzLines = ''
-		tikzLines += '\n% Draw all lines\n'
-		for (let i = 0; i < selection.lines.length; i++) {
-		  tikzLines += doLine(selection.lines[i]) + '\n'
-    }
-
+    // tikzShapes = '\n% Draw all shapes\n'
+    tikzShapes = []
+    tikzLines = '\n% Draw all lines\n'
     for (let i = 0; i < selection.graphics.length; i++) {
-      if (selection.graphics[i] instanceof Group) {
+      if (selection.graphics[i] instanceof Shape) {
+        tikzShapes.push(doShape(selection.graphics[i], bounds))
+      }
+      else if (selection.graphics[i] instanceof Line) {
+        tikzLines += doLine(selection.graphics[i]) + '\n'
+      }
+      else if (selection.graphics[i] instanceof Group) {
         for (let j = 0; j < selection.graphics[i].graphics.length; j++) {
           if (selection.graphics[i].graphics[j] instanceof Shape){
-            tikzShapes += doShape(selection.graphics[i].graphics[j], bounds) + '\n'
+            tikzShapes.push(doShape(selection.graphics[i].graphics[j], bounds))
           }
           if (selection.graphics[i].graphics[j] instanceof Line){
             tikzLines += doLine(selection.graphics[i].graphics[j]) + '\n'
@@ -328,7 +324,14 @@
       console.log(`${value.tikzStr}`);
     }
 
-    console.log(`${tikzShapes}`)
+    console.log('\n% Draw all shapes\n')
+    tikzShapes.sort(function(a,b) {
+        return b[0]-a[0]
+		 });
+    for (let x of tikzShapes) {
+      console.log(`${x[1]}`)
+    }
+    // console.log(`${tikzShapes}`)
 		console.log(`${tikzLines}`)
 
     fileTrailer()
