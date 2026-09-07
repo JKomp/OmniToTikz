@@ -154,6 +154,10 @@
     [HorizontalTextAlignment.Right,   "right"],
   ]);
 
+  const FONT_FAMILIES = new Map([
+    ["helvetica",  "phv"],
+  ]);
+
   function addEscapes(str) {
     re = /([{}_])/gi
     const matches = Array.from(str.matchAll(re));
@@ -190,6 +194,21 @@
     return nodeText
   }
 
+  function setFont(graphic) {
+
+    fontFamily = ''
+    re = /Helvetica/gi
+    availFont = graphic.fontName.match(re)
+    if (availFont != null) {
+      availFont = availFont[0].toLowerCase()
+      if (FONT_FAMILIES.has(availFont) == true) {
+        fontFamily = `\\fontfamily{${FONT_FAMILIES.get(availFont)}} \\selectfont`
+      }
+    }
+
+    return `font=\\fontsize{${ graphic.textSize }} { 0 } \\selectfont ${fontFamily}`
+  }
+
   function doShape(graphic, bounds) {
     tikzLine = ''
     rect = graphic.geometry;
@@ -207,6 +226,7 @@
     nodeText = (nodeText).replace(re, '-');
     nodeText = addEscapes(nodeText);
     nodeText = addMathMode(nodeText);
+    font = setFont(graphic);
 
     alignment = NAME_FOR_ALIGNMENT.get(graphic.textHorizontalAlignment);
     minSize = rect.width.toFixed(5)
@@ -216,7 +236,7 @@
       textWidth = `text width = ${minSize - (2 * graphic.textHorizontalPadding)}`
     }
 
-    tikzLine += `% ${nodeName}: ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding}\n`
+    tikzLine += `% ${nodeName}: ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding} ${graphic.fontName}\n`
 
     drawClr = ''
     if (graphic.strokeColor != null) {
@@ -230,11 +250,11 @@
 
     if (graphic.shape == "Circle") {
       //\node[draw, circle, minimum size=72pt, inner sep=0pt, spath/save global=S0border] (S0) at (36pt,-36pt) {S0};
-      nodeParams = `[${drawClr}, ${fillClr}, font=\\fontsize{${ graphic.textSize }} { 0 } \\selectfont, align=${alignment}, circle,line width=${graphic.strokeThickness}pt, minimum size=${minSize}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeParams = `[${drawClr}, ${fillClr}, ${font}, align=${alignment}, circle,line width=${graphic.strokeThickness}pt, minimum size=${minSize}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else if (graphic.shape == "Rectangle") {
 
-      nodeParams = `[${drawClr}, ${fillClr}, font=\\fontsize{${ graphic.textSize }} { 0 } \\selectfont, align=${alignment}, rectangle,line width=${graphic.strokeThickness}pt, minimum width=${minSize}pt, minimum height=${(rect.height).toFixed(5)}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeParams = `[${drawClr}, ${fillClr}, ${font}, align=${alignment}, rectangle,line width=${graphic.strokeThickness}pt, minimum width=${minSize}pt, minimum height=${(rect.height).toFixed(5)}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else {
       console.log(`Unknown Shape: ${graphic.shape}`);
