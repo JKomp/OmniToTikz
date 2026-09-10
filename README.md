@@ -31,6 +31,7 @@ You may need to add some tikz libraries (```usetikzlibrary```) to your document.
   * If the first char has color, that char is colored. If the entire line was colored, still only the first in the tikz export.
   * Carriage returns are converted to tikz '\\\\' and text align set to match original drawing
   * If font used was Helvetica of any form, it will be set to Helvetica (phv) in the text node. Code able to translate others, just no other fonts in translation table
+  * Handles standard unicode math chars though only greater than or equal and less than or equal are in table UNICODE_SWAP. Others can be added to table
 * Single level of groups are supported (not group of group)
 
 ## What Doesn't Work
@@ -45,8 +46,9 @@ Lots of things but in particular:
 * Selection of part of a drawing that includes lines connected to shapes not in the selection (e.g. going outside of the selection)
 * Text
   * OmniGraffle API only provides the formatting of the first char. Therefore all text is formatted per the first char
-  * Unicode chars are currently replaced with '-'. Additionally chars only valid in math mode may not be properly displayed.
-  * Font type is not carried over
+  * Unknown unicode chars are expressed as a red ?. These need to be added to the translation table UNICODE_SWAP
+  * Does not handle emojis
+  * Font type other than helvetica is not carried over
 * Saving to a file
 
 ## Notes
