@@ -194,6 +194,40 @@
     return nodeText
   }
 
+  const UNICODE_SWAP = new Map([
+    [`2264`,     `$\\leq$`],
+    [`2265`,     `$\\geq$`],
+    [`Default`,  `\\textcolor{red}?`],
+  ]);
+
+  function fixUnicode(str) {
+    // console.log(`|${str}|`)
+    // Array.from(str).forEach(char => {
+    //     console.log(`${char}: ${char.codePointAt(0).toString(16)}`);
+    // });
+
+    re = /[^\x00-\x7F]+/gi
+    matches = Array.from(str.matchAll(re))
+    if (matches.length > 0) {
+      idx = 0
+      newText = ''
+      matches.forEach(match => {
+        if (UNICODE_SWAP.has(str.charCodeAt(match.index).toString(16))) {
+          newText += str.substr(idx, match.index - idx) + UNICODE_SWAP.get(str.charCodeAt(match.index).toString(16))
+        }
+        else {
+          newText += str.substr(idx, match.index - idx) + UNICODE_SWAP.get('Default')
+        }
+        idx = match.index+1
+      })
+      newText += str.substr(idx)
+      return (newText)
+    }
+    else {
+      return (str)
+    }
+  }
+
   function setFont(graphic) {
 
     fontFamily = ''
@@ -220,21 +254,26 @@
     nodeName = graphic.id
     nodeLoc = `(${(originX + rect.width / 2).toFixed(5)}pt, ${(originY - rect.height / 2).toFixed(5)}pt)`;
 
-    re = /\n/gi
-    nodeText = (graphic.text).replace(re, '\\\\');
-    re = /[^\x00-\x7F]+/gi
-    nodeText = (nodeText).replace(re, '-');
-    nodeText = addEscapes(nodeText);
-    nodeText = addMathMode(nodeText);
-    font = setFont(graphic);
-
-    alignment = NAME_FOR_ALIGNMENT.get(graphic.textHorizontalAlignment);
-    minSize = rect.width.toFixed(5)
-
+    font = ''
     textWidth = ''
-    if (graphic.textWraps) {
-      textWidth = `text width = ${minSize - (2 * graphic.textHorizontalPadding)}`
+    alignment = ''
+    nodeText = graphic.text
+    if (nodeText.length > 0) {
+      re = /\n/gi
+      nodeText = (nodeText).replace(re, '\\\\');
+      nodeText = addEscapes(nodeText);
+      nodeText = fixUnicode(nodeText)
+      nodeText = addMathMode(nodeText);
+      font = setFont(graphic);
+      alignment = `align=${NAME_FOR_ALIGNMENT.get(graphic.textHorizontalAlignment)}`;
+      if (graphic.textWraps) {
+        textWidth = `text width = ${minSize - (2 * graphic.textHorizontalPadding)}`
+      }
+      // Note: tikz textcolor {color}{text to color} will fail if 'text to color' contains a CR (\\)
+      nodeText = `\\textcolor\{${getColor(graphic.textColor).clrName}\}${nodeText}`
     }
+
+    minSize = rect.width.toFixed(5)
 
     tikzLine += `% ${nodeName}: ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding} ${graphic.fontName}\n`
 
@@ -250,11 +289,11 @@
 
     if (graphic.shape == "Circle") {
       //\node[draw, circle, minimum size=72pt, inner sep=0pt, spath/save global=S0border] (S0) at (36pt,-36pt) {S0};
-      nodeParams = `[${drawClr}, ${fillClr}, ${font}, align=${alignment}, circle,line width=${graphic.strokeThickness}pt, minimum size=${minSize}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeParams = `[${drawClr}, ${fillClr}, ${font}, ${alignment}, circle,line width=${graphic.strokeThickness}pt, minimum size=${minSize}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else if (graphic.shape == "Rectangle") {
 
-      nodeParams = `[${drawClr}, ${fillClr}, ${font}, align=${alignment}, rectangle,line width=${graphic.strokeThickness}pt, minimum width=${minSize}pt, minimum height=${(rect.height).toFixed(5)}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
+      nodeParams = `[${drawClr}, ${fillClr}, ${font}, ${alignment}, rectangle,line width=${graphic.strokeThickness}pt, minimum width=${minSize}pt, minimum height=${(rect.height).toFixed(5)}pt, ${textWidth}, inner sep=0pt, spath/save global=${nodeName}border]`;
     }
     else {
       console.log(`Unknown Shape: ${graphic.shape}`);
@@ -262,10 +301,6 @@
       return tikzLine
     }
 
-    // Note: tikz textcolor {color}{text to color} will fail if 'text to color' contains a CR (\\)
-    if (nodeText.length > 0) {
-      nodeText = `\\textcolor\{${getColor(graphic.textColor).clrName}\}${nodeText}`
-    }
     draw = `\\node ${nodeParams} (${nodeName}) at ${nodeLoc} \{${nodeText}\};`
     tikzLine += `${draw}\n`;
 
