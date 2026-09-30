@@ -258,6 +258,7 @@
     textWidth = ''
     alignment = ''
     nodeText = graphic.text
+    minSize = rect.width.toFixed(5)
     if (nodeText.length > 0) {
       re = /\n/gi
       nodeText = (nodeText).replace(re, '\\\\');
@@ -267,13 +268,11 @@
       font = setFont(graphic);
       alignment = `align=${NAME_FOR_ALIGNMENT.get(graphic.textHorizontalAlignment)}`;
       if (graphic.textWraps) {
-        textWidth = `text width = ${minSize - (2 * graphic.textHorizontalPadding)}`
+        textWidth = `text width = ${(minSize - (2 * graphic.textHorizontalPadding)).toFixed(5)}`
       }
       // Note: tikz textcolor {color}{text to color} will fail if 'text to color' contains a CR (\\)
       nodeText = `\\textcolor\{${getColor(graphic.textColor).clrName}\}${nodeText}`
     }
-
-    minSize = rect.width.toFixed(5)
 
     tikzLine += `% ${nodeName}: ${nodeText} c: ${HEXforColor(graphic.textColor)} flow: ${graphic.textFlow} g: ${graphic.textGeometry} hl: ${graphic.textHorizontalAlignment} r: ${graphic.textRotation} size:  ${graphic.textSize} ${graphic.textUnitRect} ${graphic.textWraps} ${graphic.textHorizontalPadding} ${graphic.fontName}\n`
 
@@ -327,7 +326,7 @@
     const yCoords = []
     for (let i = 0; i < graphics.length; i++) {
       rect = graphics[i].geometry;
-      console.log(`${rect.origin.x} ${rect.origin.y}`)
+      // console.log(`${rect.origin.x} ${rect.origin.y}`)
 	    xCoords.push(rect.origin.x);
 			yCoords.push(rect.origin.y);
     }
