@@ -136,7 +136,7 @@
       // \draw[-Latex,red!70!black,line width=2pt,spath/use=curveA];
       arrows = getArrows(graphic.headType, graphic.tailType)
       clr = `${getColor(graphic.strokeColor).clrName}, opacity=${graphic.strokeColor.alpha}`
-      draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt,spath/use=curveA];`;
+      draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt,spath/use=curveA]`;
       tikzLine += `${draw};\n`
     }
     else if (graphic.lineType == LineType.Straight && graphic.points.length <= 2) {
@@ -154,7 +154,7 @@
       }
       arrows = getArrows(graphic.headType, graphic.tailType)
       clr = `${getColor(graphic.strokeColor).clrName}, opacity=${graphic.strokeColor.alpha}`
-      draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt] (${tail}) -- (${head});`
+      draw = `\\draw[${arrows},${clr},line width=${graphic.strokeThickness}pt] (${tail}) -- (${head})`
       tikzLine += `${draw};\n`
 
     }
