@@ -2,7 +2,7 @@
 ![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)  
 
 # OmniToTikz 
-![Static Badge](https://img.shields.io/badge/Version-0.5-blue)
+![Static Badge](https://img.shields.io/badge/Version-0.6-blue)
 
 OmniGraffle plug-in to export selection as a tikz graphic.
 
