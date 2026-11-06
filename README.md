@@ -53,7 +53,7 @@ Lots of things but in particular:
 
 ## Notes
 I use Zed as my editor for this work. If you want to play with the code in Zed you'll want to add the following to your ```settings.json``` file to get javascript code coloring:
-```
+```JSON
   "file_types": {
   "JavaScript": ["omnigrafflejs"],
   }
